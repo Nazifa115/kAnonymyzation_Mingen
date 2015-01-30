@@ -17,9 +17,11 @@ public class KAnonymyzation {
 
 	ArrayList<String> allDataTable;
 	HashMap<String, Integer> generalizedHashedTable;
+	HashMap<String, Integer> maxPrecisionGeneralizedTable;
 	int generalizationTableSize = 42;
 	int[][] generalizationTable = new int[3][generalizationTableSize];
 	int k;
+	double precision = 0.0;
 
 	public static void main(String[] args) {
 		// System.out.println("Hello World");
@@ -37,17 +39,39 @@ public class KAnonymyzation {
 		generateGenaralizationTable();
 		// generalizedHashedTable = new HashMap<String, Integer>();
 		for (int i = 0; i < generalizationTableSize; i++) {
-			System.out.println(generalizationTable[0][i] + ", "
-					+ generalizationTable[1][i] + ", "
-					+ generalizationTable[2][i]);
-			generalizedHashedTable = getQIDsForGeneralization(
-					generalizationTable[0][i], generalizationTable[1][i],
-					generalizationTable[2][i]);
+			int wcLevel = generalizationTable[0][i];
+			int genLevel = generalizationTable[1][i];
+			int ageLvl = generalizationTable[2][i];
+			System.out.println(wcLevel + ", " + genLevel + ", " + ageLvl);
+			generalizedHashedTable = getQIDsForGeneralization(wcLevel,
+					genLevel, ageLvl);
 			Boolean isYes = isKAnonymous(generalizedHashedTable);
-			System.out.println(isYes);
+			if (isYes) {
+				countPrecision(wcLevel, genLevel, ageLvl);
+				System.out.println(precision);
+			}
+		}
+		if (precision > 0) {
+			System.out.println("Anonymized table found for k = " + k + " Maximum precision: " + precision);
+			Iterator<String> iter = maxPrecisionGeneralizedTable.keySet().iterator();
+			while (iter.hasNext()) {
+				String key = (String) iter.next();
+				int value = maxPrecisionGeneralizedTable.get(key);
+				System.out.println(key + ":" + value);
+				}
+		}else {
+			System.out.println("No anonymization was found for the value of k:" + k);
 		}
 		// Boolean isYes = obj.isKAnonymous(allDataTable);
 		// System.out.println(isYes);
+	}
+
+	private void countPrecision(int wcLevel, int genLevel, int ageLvl) {
+		double cur_precision = 1.00 - ((((wcLevel/3)+(genLevel/2)+(ageLvl/7)))/(30.162*3));
+		if (cur_precision > precision){
+			precision = cur_precision;
+			maxPrecisionGeneralizedTable = generalizedHashedTable;
+			}
 	}
 
 	private void generateGenaralizationTable() {
@@ -95,6 +119,7 @@ public class KAnonymyzation {
 		while (iter.hasNext()) {
 			String key = (String) iter.next();
 			int value = generalizedMap.get(key);
+			// System.out.println(key + ":" + value);
 			if (value < k)
 				return false;
 			else
@@ -170,7 +195,8 @@ public class KAnonymyzation {
 	}
 
 	public ArrayList<String> readCSV() {
-//		String csvFile = "/Users/nazifakarima/Documents/Nazifa/WrightStateUni/CEG7850/adults_modified.txt";
+		// String csvFile =
+		// "/Users/nazifakarima/Documents/Nazifa/WrightStateUni/CEG7850/adults_modified.txt";
 		String csvFile = "/Users/nazifakarima/Documents/Nazifa/WrightStateUni/CEG7850/adults.txt";
 		BufferedReader br = null;
 		String line = "";
