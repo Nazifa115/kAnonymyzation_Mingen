@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.security.AllPermission;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -13,91 +15,180 @@ import java.util.Set;
 
 public class KAnonymyzation {
 
-	HashMap<String, String> allDataTable;
-	HashMap<String, Integer> hashedTable;
+	ArrayList<String> allDataTable;
+	HashMap<String, Integer> generalizedHashedTable;
+	int generalizationTableSize = 42;
+	int[][] generalizationTable = new int[3][generalizationTableSize];
 	int k;
 
 	public static void main(String[] args) {
 		// System.out.println("Hello World");
 		KAnonymyzation kAnon = new KAnonymyzation();
 		kAnon.startAnonymyzation();
+
 	}
 
 	public void startAnonymyzation() {
 		KAnonymyzation obj = new KAnonymyzation();
 		allDataTable = obj.readCSV();
-		Scanner scan = new Scanner(System.in);
-		// String s = scan.next();
 		System.out.println("Enter value of k: ");
+		Scanner scan = new Scanner(System.in);
 		k = scan.nextInt();
-		hashedTable = new HashMap<String, Integer>();
-		Boolean isYes = obj.isKAnonymous(allDataTable);
-		System.out.println(isYes);
-	}
-
-	private Boolean isKAnonymous(HashMap<String, String> generatedDataTable) {
-		hashedTable = new HashMap<String, Integer>();
-		//hashedTable.clear();
-		Set<Entry<String, String>> entryString = allDataTable.entrySet();
-		System.out.println("Generated table size: " + generatedDataTable.size());
-		Iterator<Entry<String, String>> iter = entryString.iterator();
-		while (iter.hasNext()){
-			Map.Entry<String, String> pair = ((Map.Entry<String, String>) iter.next());
-			String key = (String) pair.getKey();
-			System.out.println("Generated table key: " + key);
-			String value = pair.getValue();
-			System.out.println("Generated table value: " + value);
-			if (hashedTable.containsKey(value)){
-				int count = hashedTable.get(value);
-				count++;
-				hashedTable.put(value, count);
-				System.out.println("Generated table count: " + count + " for value: " + value);
-			}
-			else {
-				hashedTable.put(value, 1);
-				System.out.println("Generated table count: " + "1" + " for value: " + value);
-			}
-			
+		generateGenaralizationTable();
+		// generalizedHashedTable = new HashMap<String, Integer>();
+		for (int i = 0; i < generalizationTableSize; i++) {
+			System.out.println(generalizationTable[0][i] + ", "
+					+ generalizationTable[1][i] + ", "
+					+ generalizationTable[2][i]);
+			generalizedHashedTable = getQIDsForGeneralization(
+					generalizationTable[0][i], generalizationTable[1][i],
+					generalizationTable[2][i]);
+			Boolean isYes = isKAnonymous(generalizedHashedTable);
+			System.out.println(isYes);
 		}
-		return false;
-//		Set<Entry<String, Integer>> entryInteger = hashedTable.entrySet();
-//		iter = entryInteger.iterator();
-//		int loopcount = 0;
-//		while (iter.hasNext()) {
-//			String key = (String)iter.next();
-//			System.out.println("hashed table key: " + key);
-//			Integer value = hashedTable.get(key);
-//			System.out.println("hashed table value: " + value);
-//			if (value < k) {
-//				return false;
-//			} 
-//			loopcount++;
-//		}
-//		System.out.println("loopcount: " + loopcount + " hashedtable size: " + hashedTable.size());
-//		if (loopcount == hashedTable.size()) {
-//			return true;
-//		} else {
-//			return false;
-//		}
+		// Boolean isYes = obj.isKAnonymous(allDataTable);
+		// System.out.println(isYes);
 	}
 
-	public HashMap<String, String> readCSV() {
-		String csvFile = "/Users/nazifakarima/Documents/Nazifa/WrightStateUni/CEG7850/adults_modified.txt";
+	private void generateGenaralizationTable() {
+		for (int i = 0; i < generalizationTableSize; i++) {
+			if (i < 14) {
+				generalizationTable[0][i] = 0;
+			} else if (i >= 14 && i <= 27) {
+				generalizationTable[0][i] = 1;
+			} else if (i > 27 && i < 42) {
+				generalizationTable[0][i] = 2;
+			}
+
+			if ((i < 7) || (i > 13 && i < 21) || (i >= 28 && i < 35)) {
+				generalizationTable[1][i] = 0;
+			} else {
+				generalizationTable[1][i] = 1;
+			}
+
+			if (i % 7 == 0) {
+				generalizationTable[2][i] = 0;
+			} else if (i % 7 == 1) {
+				generalizationTable[2][i] = 1;
+			} else if (i % 7 == 2) {
+				generalizationTable[2][i] = 2;
+			} else if (i % 7 == 3) {
+				generalizationTable[2][i] = 3;
+			} else if (i % 7 == 4) {
+				generalizationTable[2][i] = 4;
+			} else if (i % 7 == 5) {
+				generalizationTable[2][i] = 5;
+			} else if (i % 7 == 6) {
+				generalizationTable[2][i] = 6;
+			}
+		}
+
+		// for (int i = 0; i < generalizationTableSize; i++) {
+		// System.out.println(generalizationTable[0][i] + " " +
+		// generalizationTable[1][i] + " " + generalizationTable[2][i]);
+		// }
+	}
+
+	private Boolean isKAnonymous(HashMap<String, Integer> generalizedMap) {
+		Iterator<String> iter = generalizedMap.keySet().iterator();
+		int count = 0;
+		while (iter.hasNext()) {
+			String key = (String) iter.next();
+			int value = generalizedMap.get(key);
+			if (value < k)
+				return false;
+			else
+				count++;
+		}
+		if (count == generalizedMap.size()) {
+			return true;
+		} else
+			return false;
+	}
+
+	private HashMap<String, Integer> getQIDsForGeneralization(
+			int workClassLevel, int genderLevel, int ageLevel) {
+		generalizedHashedTable = new HashMap<String, Integer>();
+		for (int i = 0; i < allDataTable.size(); i++) {
+			String row = allDataTable.get(i);
+			String cvsSplitBy = ",";
+			String[] attributes = row.split(cvsSplitBy);
+			String ageRange = getGenaralisedAge(ageLevel, attributes[0]);
+			String workType = getGeneralisedWorkType(workClassLevel,
+					attributes[1]);
+			String gender = getGenaralisedGender(genderLevel, attributes[9]);
+			String qIDVal = ageRange + workType + gender;
+			if (generalizedHashedTable.containsKey(qIDVal)) {
+				Integer count = generalizedHashedTable.get(qIDVal);
+				count++;
+				generalizedHashedTable.put(qIDVal, count);
+			} else {
+				generalizedHashedTable.put(qIDVal, 1);
+			}
+		}
+		return generalizedHashedTable;
+	}
+
+	private String getGenaralisedGender(int genderLevel, String genderString) {
+		if (genderLevel == 0)
+			return genderString;
+		else
+			return "person";
+	}
+
+	private String getGeneralisedWorkType(int workClassLevel,
+			String workTypestring) {
+		if (workClassLevel == 0) {
+			return workTypestring;
+		} else if (workClassLevel == 1
+				&& (workTypestring.equalsIgnoreCase("Self-emp-not-inc") || workTypestring
+						.equalsIgnoreCase("Self-emp-inc"))) {
+			return "Self_employed";
+		} else if (workClassLevel == 1
+				&& (workTypestring.equalsIgnoreCase("Federal-gov") || workTypestring
+						.equalsIgnoreCase("State-gov"))) {
+			return "Government";
+		} else if (workClassLevel == 1
+				&& (workTypestring.equalsIgnoreCase("Private"))) {
+			return "Private";
+		} else {
+			return "Work_class";
+		}
+	}
+
+	private String getGenaralisedAge(int ageLevel, String ageString) {
+		if (ageLevel == 0) {
+			return ageString;
+		} else {
+			int divisor = ageLevel * 5;
+			int age = Integer.parseInt(ageString);
+			int lowerBound = age / divisor;
+			lowerBound = lowerBound * divisor;
+			int upperBound = lowerBound + divisor;
+			return (lowerBound + "-" + upperBound);
+		}
+	}
+
+	public ArrayList<String> readCSV() {
+//		String csvFile = "/Users/nazifakarima/Documents/Nazifa/WrightStateUni/CEG7850/adults_modified.txt";
+		String csvFile = "/Users/nazifakarima/Documents/Nazifa/WrightStateUni/CEG7850/adults.txt";
 		BufferedReader br = null;
 		String line = "";
-		String cvsSplitBy = ",";
-		allDataTable = new HashMap<String, String>();
+		// String cvsSplitBy = ",";
+		allDataTable = new ArrayList<String>();
 		try {
 			br = new BufferedReader(new FileReader(csvFile));
 			if (br != null)
 				System.out.println("found file");
 			while ((line = br.readLine()) != null) {
 				// use comma as separator
-				String[] attributes = line.split(cvsSplitBy);
-				//System.out.println(" [age=" + attributes[0] + ", work type="+ attributes[1] + ", gender=" + attributes[9] + "]");
-				String QIDtuple = attributes[0] + attributes[1] + attributes[9];
-				//System.out.println(line + " : " + s);
-				allDataTable.put(line, QIDtuple);
+				// String[] attributes = line.split(cvsSplitBy);
+				// System.out.println(" [age=" + attributes[0] + ", work type="+
+				// attributes[1] + ", gender=" + attributes[9] + "]");
+				// String QIDtuple = attributes[0] + attributes[1] +
+				// attributes[9];
+				// System.out.println(line + " : " + s);
+				allDataTable.add(line);
 			}
 		} catch (FileNotFoundException e) {
 			// TODO: handle exception
