@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.AllPermission;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,12 +17,15 @@ import java.util.Set;
 public class KAnonymyzation {
 
 	ArrayList<String> allDataTable;
+	ArrayList<String> genaralisedAllDataTable, generalisedTempAllDataTable;
 	HashMap<String, Integer> generalizedHashedTable;
 	HashMap<String, Integer> maxPrecisionGeneralizedTable;
 	int generalizationTableSize = 42;
 	int[][] generalizationTable = new int[3][generalizationTableSize];
 	int k;
-	double precision = 0.0;
+	// BigDecimal precision = new BigDecimal(0.0);
+	double precision = 0;
+	BigDecimal zero = new BigDecimal(0.0);
 
 	public static void main(String[] args) {
 		// System.out.println("Hello World");
@@ -48,30 +52,63 @@ public class KAnonymyzation {
 			Boolean isYes = isKAnonymous(generalizedHashedTable);
 			if (isYes) {
 				countPrecision(wcLevel, genLevel, ageLvl);
-				System.out.println(precision);
+				// System.out.println(precision);
+				for (int j = 0; j < genaralisedAllDataTable.size(); j++) {
+					System.out.println(genaralisedAllDataTable.get(j));
+				}
 			}
 		}
+		// if (precision.compareTo(zero) == 1) {
 		if (precision > 0) {
-			System.out.println("Anonymized table found for k = " + k + " Maximum precision: " + precision);
-			Iterator<String> iter = maxPrecisionGeneralizedTable.keySet().iterator();
+			System.out.println("Anonymized table found for k = " + k
+					+ " Maximum precision: " + precision);
+			Iterator<String> iter = maxPrecisionGeneralizedTable.keySet()
+					.iterator();
 			while (iter.hasNext()) {
 				String key = (String) iter.next();
 				int value = maxPrecisionGeneralizedTable.get(key);
 				System.out.println(key + ":" + value);
-				}
-		}else {
-			System.out.println("No anonymization was found for the value of k:" + k);
+			}
+		} else {
+			System.out.println("No anonymization was found for the value of k:"
+					+ k);
 		}
 		// Boolean isYes = obj.isKAnonymous(allDataTable);
 		// System.out.println(isYes);
 	}
 
+	// private void countPrecision(int wcLevel, int genLevel, int ageLvl) {
+	// BigDecimal deduct_numerator = new BigDecimal((wcLevel / 3)
+	// + (genLevel / 2) + (ageLvl / 7));
+	// BigDecimal deduct_denom = new BigDecimal(.30162 * 3);
+	// BigDecimal deductable = deduct_numerator.divide(deduct_denom);
+	// System.out.println(deductable + ", " + deduct_denom + ", "
+	// + deduct_numerator);
+	// BigDecimal one = new BigDecimal(1);
+	// BigDecimal cur_precision = one.subtract(deductable);
+	// if (cur_precision.compareTo(precision) == 1) {
+	// precision = cur_precision;
+	// maxPrecisionGeneralizedTable = generalizedHashedTable;
+	// }
+	// }
+
 	private void countPrecision(int wcLevel, int genLevel, int ageLvl) {
-		double cur_precision = 1.00 - ((((wcLevel/3)+(genLevel/2)+(ageLvl/7)))/(30.162*3));
-		if (cur_precision > precision){
+		double deduct_numerator = (wcLevel / 3.00) + (genLevel / 2.00)
+				+ (ageLvl / 7.00);
+
+		double cur_precision = 1 - (deduct_numerator / (3.0162 * 3.0));
+		System.out.print("current precision: " + cur_precision);
+		if (cur_precision >= precision) {
 			precision = cur_precision;
+			System.out.print(" is maximum precision");
 			maxPrecisionGeneralizedTable = generalizedHashedTable;
-			}
+			storeMaxPrecisionDataTable();
+		}
+	}
+
+	private void storeMaxPrecisionDataTable() {
+		genaralisedAllDataTable = new ArrayList<String>(
+				generalisedTempAllDataTable);
 	}
 
 	private void generateGenaralizationTable() {
@@ -134,6 +171,7 @@ public class KAnonymyzation {
 	private HashMap<String, Integer> getQIDsForGeneralization(
 			int workClassLevel, int genderLevel, int ageLevel) {
 		generalizedHashedTable = new HashMap<String, Integer>();
+		generalisedTempAllDataTable = new ArrayList<String>();
 		for (int i = 0; i < allDataTable.size(); i++) {
 			String row = allDataTable.get(i);
 			String cvsSplitBy = ",";
@@ -142,6 +180,13 @@ public class KAnonymyzation {
 			String workType = getGeneralisedWorkType(workClassLevel,
 					attributes[1]);
 			String gender = getGenaralisedGender(genderLevel, attributes[9]);
+			String newRow = ageRange + "," + workType + "," + attributes[2]
+					+ "," + attributes[3] + "," + attributes[4] + ","
+					+ attributes[5] + "," + attributes[6] + "," + attributes[7]
+					+ "," + attributes[8] + "," + gender + "," + attributes[10]
+					+ "," + attributes[11] + "," + attributes[12] + ","
+					+ attributes[13] + "," + attributes[14];
+			generalisedTempAllDataTable.add(newRow);
 			String qIDVal = ageRange + workType + gender;
 			if (generalizedHashedTable.containsKey(qIDVal)) {
 				Integer count = generalizedHashedTable.get(qIDVal);
