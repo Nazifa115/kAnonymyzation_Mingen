@@ -85,7 +85,7 @@ public class KAnonymyzation {
 		String toWriteInFile = new String(toBeWritten);
 		try {
  
-			file = new File("../output");
+			file = new File("output.txt");
 			fop = new FileOutputStream(file);
  
 			// if file doesnt exists, then create it
