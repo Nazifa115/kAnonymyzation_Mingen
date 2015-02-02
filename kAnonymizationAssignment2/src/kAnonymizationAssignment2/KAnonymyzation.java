@@ -1,18 +1,16 @@
 package kAnonymizationAssignment2;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.security.AllPermission;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Scanner;
-import java.util.Set;
 
 public class KAnonymyzation {
 
@@ -52,16 +50,14 @@ public class KAnonymyzation {
 			Boolean isYes = isKAnonymous(generalizedHashedTable);
 			if (isYes) {
 				countPrecision(wcLevel, genLevel, ageLvl);
-				// System.out.println(precision);
-				for (int j = 0; j < genaralisedAllDataTable.size(); j++) {
-					System.out.println(genaralisedAllDataTable.get(j));
-				}
+				//System.out.println(precision);
 			}
 		}
 		// if (precision.compareTo(zero) == 1) {
 		if (precision > 0) {
 			System.out.println("Anonymized table found for k = " + k
 					+ " Maximum precision: " + precision);
+			writeOutputToFile();
 			Iterator<String> iter = maxPrecisionGeneralizedTable.keySet()
 					.iterator();
 			while (iter.hasNext()) {
@@ -74,7 +70,48 @@ public class KAnonymyzation {
 					+ k);
 		}
 		// Boolean isYes = obj.isKAnonymous(allDataTable);
-		// System.out.println(isYes);
+		 System.out.println("Done. Output file is generated in parent folder.");
+	}
+
+	private void writeOutputToFile() {
+		StringBuilder toBeWritten = new StringBuilder();
+		for (int j = 0; j < genaralisedAllDataTable.size(); j++) {
+			//System.out.println(genaralisedAllDataTable.get(j));
+			toBeWritten.append(genaralisedAllDataTable.get(j));
+			toBeWritten.append(System.getProperty("line.separator"));
+		}
+		FileOutputStream fop = null;
+		File file;
+		String toWriteInFile = new String(toBeWritten);
+		try {
+ 
+			file = new File("../output");
+			fop = new FileOutputStream(file);
+ 
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+ 
+			// get the content in bytes
+			byte[] contentInBytes = toWriteInFile.getBytes();
+ 
+			fop.write(contentInBytes);
+			fop.flush();
+			fop.close();
+ 
+ 
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (fop != null) {
+					fop.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	// private void countPrecision(int wcLevel, int genLevel, int ageLvl) {
@@ -96,7 +133,7 @@ public class KAnonymyzation {
 		double deduct_numerator = (wcLevel / 3.00) + (genLevel / 2.00)
 				+ (ageLvl / 7.00);
 
-		double cur_precision = 1 - (deduct_numerator / (3.0162 * 3.0));
+		double cur_precision = 1 - (deduct_numerator / (30162 * 3.0));
 		System.out.print("current precision: " + cur_precision);
 		if (cur_precision >= precision) {
 			precision = cur_precision;
@@ -104,6 +141,7 @@ public class KAnonymyzation {
 			maxPrecisionGeneralizedTable = generalizedHashedTable;
 			storeMaxPrecisionDataTable();
 		}
+		System.out.println("");
 	}
 
 	private void storeMaxPrecisionDataTable() {
